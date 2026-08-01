@@ -36,11 +36,12 @@
 1. [Screenshots](#-screenshots)
 2. [Quick Start](#-quick-start)
 3. [Features](#-features)
-4. [Backup & Restore](#-backup--restore)
-5. [Schema Export](#-schema-export-10-formats)
-6. [Project Architecture](#%EF%B8%8F-project-architecture)
-7. [Roles & Permissions](#-roles--permissions)  
-8. [Remote MySQL Server Configuration](#-remote-mysql-server-configuration)
+4. [Schema Export](#-schema-export-10-formats)
+5. [Backup & Restore](#-backup--restore)
+6. [Configuration Reference](#%EF%B8%8F-configuration-reference)
+6. [Remote MySQL Server Configuration](#-remote-mysql-server-configuration)
+7. [Project Architecture](#%EF%B8%8F-project-architecture)
+8. [Roles & Permissions](#-roles--permissions)  
 9. [Deployment Tips](#-deployment-tips)
 
 ---
