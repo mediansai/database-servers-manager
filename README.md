@@ -38,11 +38,8 @@
 3. [Features](#-features)
 4. [Backup](#-backup)
 5. [Export](#-export)
-6. [Configuration](#-configuration)
+6. [Configuration](#-configuration-reference)
 7. [Authentication](#-authentication)
-
----
-
 
 ---
 
