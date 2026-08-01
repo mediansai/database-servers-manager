@@ -16,9 +16,9 @@ $GLOBALS['DB_SERVERS'] = [
     ],
     'production' => [
         'label'    => 'Production',
-        'host'     => '78.13.55.179',
-        'user'     => 'amr',
-        'password' => 'Medians@2026',
+        'host'     => '',
+        'user'     => '',
+        'password' => '',
         'charset'  => 'utf8mb4',
     ],
 ];
