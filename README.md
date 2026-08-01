@@ -33,13 +33,12 @@
 
 ## Table of contents
 
-1. [ERD Designer](#-erd-designer)
-2. [Database Manager](#-database-manager)
-3. [File Manager](#-file-manager)
-4. [Backup & Restore](#-backup--restore)
-5. [Export](#-export)
-6. [Authentication & Security](#-authentication--security)
-7. [Configuration](#-configuration)
+1. [Screenshots](#-screenshots)
+2. [Features](#-features)
+3. [Configuration](#-configuration)
+4. [Authentication](#-authentication)
+5. [Backup](#-backup)
+6. [Export](#-export)
 
 ---
 
