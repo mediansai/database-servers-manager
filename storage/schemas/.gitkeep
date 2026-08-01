@@ -1,0 +1,2 @@
+# This file ensures the schemas directory is tracked in Git even when empty
+# Schema files can be added/removed as needed
