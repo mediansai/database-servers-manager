@@ -280,10 +280,6 @@
 
             <!-- CTAs -->
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-                <a href="login.php" class="btn-cta">
-                    <i class="fas fa-rocket"></i>
-                    Launch Application
-                </a>
                 <a href="#quickstart" class="btn-outline">
                     <i class="fas fa-book-open"></i>
                     Quick Start Guide
@@ -428,7 +424,7 @@
                         <div class="flex-1">
                             <h3 class="text-lg font-bold text-white mb-3">Clone the repository</h3>
                             <div class="code-block">
-                                <span class="comment">$ </span>git clone https://github.com/YourUsername/database-servers-manager.git<br>
+                                <span class="comment">$ </span>git clone https://github.com/mediansai/database-servers-manager.git<br>
                                 <span class="comment">$ </span>cd database-servers-manager
                             </div>
                         </div>
@@ -643,11 +639,7 @@
                 Clone the repo, edit one config file, and you're managing databases in under a minute.
             </p>
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <a href="login.php" class="btn-cta">
-                    <i class="fas fa-sign-in-alt"></i>
-                    Launch Application
-                </a>
-                <a href="https://github.com/YourUsername/database-servers-manager" class="btn-outline" target="_blank">
+                <a href="https://github.com/mediansai/database-servers-manager" class="btn-outline" target="_blank">
                     <i class="fab fa-github"></i>
                     View on GitHub
                 </a>
@@ -670,7 +662,7 @@
                 </div>
                 <div class="flex items-center gap-6 text-sm text-gray-500">
                     <span>&copy; <?php echo date('Y'); ?> — MIT License</span>
-                    <a href="https://github.com/YourUsername/database-servers-manager" class="hover:text-gray-300 transition" target="_blank">
+                    <a href="https://github.com/mediansai/database-servers-manager" class="hover:text-gray-300 transition" target="_blank">
                         <i class="fab fa-github text-lg"></i>
                     </a>
                 </div>
