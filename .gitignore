@@ -1,1 +1,27 @@
+# Documentation (internal)
 DOCS
+
+# Backups (user-generated data)
+storage/backups/*.sql
+
+# Schema files (optional — uncomment to track schemas in Git)
+# storage/schemas/*.dbschema
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# PHP / Composer
+vendor/
+composer.lock
+
+# Environment
+.env

@@ -4,17 +4,30 @@
  */
 class Auth {
 
+    /**
+     * Compute the application's base URL path dynamically.
+     * Works regardless of where the project is installed.
+     */
+    private static function basePath(): string {
+        $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
+        // Walk up from includes/ or handlers/ sub-dirs to project root
+        $projectRoot = str_replace('\\', '/', dirname(__DIR__));
+        $docRoot     = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']);
+        $base        = '/' . trim(str_replace($docRoot, '', $projectRoot), '/');
+        return rtrim($base, '/');
+    }
+
     /** Redirect to login if not authenticated */
     public static function require(): void {
         if (!self::check()) {
             $redirect = urlencode($_SERVER['REQUEST_URI'] ?? '/');
-            header('Location: /workplace/phpmyadmin/login.php?redirect=' . $redirect);
+            header('Location: ' . self::basePath() . '/login.php?redirect=' . $redirect);
             exit;
         }
         // Auto-logout on session timeout
         if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity']) > SESSION_TIMEOUT) {
             self::logout();
-            header('Location: /workplace/phpmyadmin/login.php?timeout=1');
+            header('Location: ' . self::basePath() . '/login.php?timeout=1');
             exit;
         }
         $_SESSION['last_activity'] = time();

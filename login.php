@@ -107,12 +107,6 @@ $error    = '';
                     Sign In
                 </button>
             </form>
-
-            <!-- Hint -->
-            <p class="text-center text-xs text-blue-400 mt-6">
-                Default: <code class="bg-white bg-opacity-10 px-1 rounded">admin</code> /
-                <code class="bg-white bg-opacity-10 px-1 rounded">admin123</code>
-            </p>
         </div>
 
         <p class="text-center text-xs text-blue-400 mt-6 opacity-60">
