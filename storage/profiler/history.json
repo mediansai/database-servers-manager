@@ -1,0 +1,116 @@
+[
+    {
+        "query": "select * from modules",
+        "database": "medians_crm_ai",
+        "execution_time_ms": 1.92,
+        "rows_returned": 55,
+        "rows_scanned": 0,
+        "indexes_used": [],
+        "full_table_scans": 1,
+        "timestamp": "2026-08-01 08:56:46"
+    },
+    {
+        "query": "select * from booking",
+        "database": "bedaya_new",
+        "execution_time_ms": 9.563,
+        "rows_returned": 4450,
+        "rows_scanned": 0,
+        "indexes_used": [],
+        "full_table_scans": 1,
+        "timestamp": "2026-08-01 08:58:10"
+    },
+    {
+        "query": "select * from booking",
+        "database": "bedaya_new",
+        "execution_time_ms": 8.052,
+        "rows_returned": 4450,
+        "rows_scanned": 0,
+        "indexes_used": [],
+        "full_table_scans": 1,
+        "timestamp": "2026-08-01 09:02:29"
+    },
+    {
+        "query": "select id from booking",
+        "database": "bedaya_new",
+        "execution_time_ms": 2.752,
+        "rows_returned": 4450,
+        "rows_scanned": 0,
+        "indexes_used": [
+            "PRIMARY"
+        ],
+        "full_table_scans": 0,
+        "timestamp": "2026-08-01 09:03:01"
+    },
+    {
+        "query": "select * from booking as b LEFT JOIN online_consultation ON `online_consultation`.`id` = b.itemid",
+        "database": "bedaya_new",
+        "execution_time_ms": 15.727,
+        "rows_returned": 4450,
+        "rows_scanned": 0,
+        "indexes_used": [
+            "PRIMARY"
+        ],
+        "full_table_scans": 0,
+        "timestamp": "2026-08-01 09:06:22"
+    },
+    {
+        "query": "select * from booking as b LEFT JOIN online_consultation ON `online_consultation`.`id` = b.itemid\nwhere b.class = 'OnlineConsultation'",
+        "database": "bedaya_new",
+        "execution_time_ms": 6.656,
+        "rows_returned": 1111,
+        "rows_scanned": 0,
+        "indexes_used": [
+            "PRIMARY"
+        ],
+        "full_table_scans": 0,
+        "timestamp": "2026-08-01 09:07:24"
+    },
+    {
+        "query": "select * from booking as b LEFT JOIN online_consultation ON `online_consultation`.`id` = b.itemid",
+        "database": "bedaya_new",
+        "execution_time_ms": 17.737,
+        "rows_returned": 4450,
+        "rows_scanned": 0,
+        "indexes_used": [
+            "PRIMARY"
+        ],
+        "full_table_scans": 0,
+        "timestamp": "2026-08-01 09:07:30"
+    },
+    {
+        "query": "select * from booking as b LEFT JOIN online_consultation ON `online_consultation`.`id` = b.itemid\nwhere b.class = 'OnlineConsultation'\nOR b.class = 'OnlineConsultation'",
+        "database": "bedaya_new",
+        "execution_time_ms": 6.111,
+        "rows_returned": 1111,
+        "rows_scanned": 0,
+        "indexes_used": [
+            "PRIMARY"
+        ],
+        "full_table_scans": 0,
+        "timestamp": "2026-08-01 09:08:15"
+    },
+    {
+        "query": "select * from booking as b LEFT JOIN online_consultation ON `online_consultation`.`id` = b.itemid\nwhere b.class = 'OnlineConsultation'\nOR b.class = 'OnlineConsultation' AND b.itemid != 0",
+        "database": "bedaya_new",
+        "execution_time_ms": 10.938,
+        "rows_returned": 1111,
+        "rows_scanned": 0,
+        "indexes_used": [
+            "PRIMARY"
+        ],
+        "full_table_scans": 0,
+        "timestamp": "2026-08-01 09:08:57"
+    },
+    {
+        "query": "select * from booking as b LEFT JOIN online_consultation ON `online_consultation`.`id` = b.itemid\nwhere b.class = 'OnlineConsultation'\nAND b.class = 'OnlineConsultation' AND b.itemid != 0",
+        "database": "bedaya_new",
+        "execution_time_ms": 5.795,
+        "rows_returned": 1099,
+        "rows_scanned": 0,
+        "indexes_used": [
+            "PRIMARY"
+        ],
+        "full_table_scans": 0,
+        "timestamp": "2026-08-01 09:09:08"
+    }
+]

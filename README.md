@@ -28,6 +28,7 @@
 | No visual database design | Built-in ERD designer with drag & drop |
 | Exporting schemas is manual work | One-click export to SQL, Prisma, Laravel, TypeScript, Django, and more |
 | Backup tools require CLI | Visual backup & restore with file management |
+| Profiling & debugging SQL is complex | Visual Query Profiler with execution metrics, EXPLAIN trees, and slow query stats |
 
 ---
 
@@ -38,11 +39,12 @@
 3. [Features](#-features)
 4. [Schema Export](#-schema-export-10-formats)
 5. [Backup & Restore](#-backup--restore)
-6. [Configuration Reference](#%EF%B8%8F-configuration-reference)
-6. [Remote MySQL Server Configuration](#-remote-mysql-server-configuration)
-7. [Project Architecture](#%EF%B8%8F-project-architecture)
-8. [Roles & Permissions](#-roles--permissions)  
-9. [Deployment Tips](#-deployment-tips)
+6. [Query Profiler](#-query-profiler)
+7. [Configuration Reference](#%EF%B8%8F-configuration-reference)
+8. [Remote MySQL Server Configuration](#-remote-mysql-server-configuration)
+9. [Project Architecture](#%EF%B8%8F-project-architecture)
+10. [Roles & Permissions](#-roles--permissions)  
+11. [Deployment Tips](#-deployment-tips)
 
 ---
 
@@ -205,6 +207,12 @@ http://localhost/database-servers-manager/
 - Tag, describe, and version your schemas
 - Open files directly in the visual designer
 
+### ⚡ Query Profiler
+- **Live Query Execution & Metrics**: Profile `SELECT` and `WITH` queries with execution timings (ms), rows scanned vs. returned, and full table scan detection.
+- **Visual EXPLAIN Trees & Tables**: Interactive node-by-node execution plan breakdown generated from MySQL `EXPLAIN FORMAT=JSON`, with access type color-coding (ALL, index, range, ref, const) and classic tabular view.
+- **Slow Query Log Analysis**: Integrates with MySQL `performance_schema` to surface top slow queries, execution counts, average/max duration, and unindexed scans.
+- **Profiling History**: Keeps a history log (`storage/profiler/history.json`) of profiled queries for auditing and performance tracking.
+
 ### 🔐 Authentication & Security
 - Session-based auth — no external database needed for users
 - Role-based access control (admin / viewer)
@@ -348,6 +356,7 @@ database-servers-manager/
 ├── designer.php            # Visual ERD designer
 ├── backup.php              # Backup & restore manager
 ├── file_manager.php        # Offline schema file manager
+├── profiler.php            # Query profiler & slow query engine UI
 │
 ├── includes/               # PHP classes (business logic)
 │   ├── Auth.php            # Session-based authentication
@@ -360,7 +369,8 @@ database-servers-manager/
 │   ├── SchemaExporter.php  # 10-format export engine
 │   ├── DatabaseExportImport.php # SQL export/import
 │   ├── ColumnTypeHelper.php    # Column type utilities
-│   └── LaravelMigrationGenerator.php # Laravel migrations
+│   ├── LaravelMigrationGenerator.php # Laravel migrations
+│   └── QueryProfiler.php   # Query profiling & EXPLAIN engine
 │
 ├── handlers/               # AJAX endpoints
 │   ├── auth_handler.php    # Login, logout, server switch
@@ -368,7 +378,8 @@ database-servers-manager/
 │   ├── backup_handler.php  # Backup API
 │   ├── designer_handler.php # Designer API
 │   ├── export_handler.php  # Schema export API
-│   └── file_handler.php    # File manager API
+│   ├── file_handler.php    # File manager API
+│   └── profiler_handler.php # Query profiler API
 │
 ├── views/                  # PHP templates
 │   ├── header.php          # HTML head + top navigation bar
@@ -385,10 +396,12 @@ database-servers-manager/
 │       ├── designer.js     # ERD canvas engine
 │       ├── editor.js       # Inline cell editor
 │       ├── file_manager.js # File manager logic
+│       ├── profiler.js     # Query profiler frontend logic
 │       └── modals.js       # Modal management
 │
 ├── storage/
 │   ├── backups/            # Generated .sql backup files
+│   ├── profiler/           # Saved query profiling history
 │   └── schemas/            # .dbschema files
 │
 ├── LICENSE                 # MIT License
@@ -404,6 +417,7 @@ database-servers-manager/
 | Browse databases & tables | ✅ | ✅ |
 | View table data | ✅ | ✅ |
 | Run SQL queries | ✅ | ✅ |
+| Use Query Profiler | ✅ | ✅ |
 | Insert / Edit / Delete rows | ✅ | ❌ |
 | Create / Drop tables | ✅ | ❌ |
 | Create backups | ✅ | ❌ |

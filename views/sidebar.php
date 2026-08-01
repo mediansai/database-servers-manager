@@ -18,6 +18,11 @@
                 <i class="fas fa-archive"></i>
                 <span class="font-medium">Backup Manager</span>
             </a>
+            <a href="profiler.php<?php echo $selectedDatabase ? '?database=' . urlencode($selectedDatabase) : ''; ?>"
+               class="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-lg hover:from-teal-600 hover:to-cyan-700 transition-all shadow-sm text-sm">
+                <i class="fas fa-tachometer-alt"></i>
+                <span class="font-medium">Query Profiler</span>
+            </a>
         </div>
     </div>
 

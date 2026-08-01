@@ -1,0 +1,932 @@
+diff --git a/.gitignore b/.gitignore
+index fcd1f32..7ecf281 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -4,6 +4,9 @@ DOCS
+ # Backups (user-generated data)
+ storage/backups/*.sql
+ 
++# Query profiler history (user-generated data)
++storage/profiler/history.json
++
+ # Schema files (optional — uncomment to track schemas in Git)
+ # storage/schemas/*.dbschema
+ 
+diff --git a/assets/js/profiler.js b/assets/js/profiler.js
+new file mode 100644
+index 0000000..9c15456
+--- /dev/null
++++ b/assets/js/profiler.js
+@@ -0,0 +1,403 @@
++/**
++ * Query Profiler — front-end logic
++ */
++
++let profilerDatabase = document.getElementById('profiler-database')
++    ? document.getElementById('profiler-database').value
++    : null;
++
++const PROFILER_ACCESS_COLORS = {
++    system:      { bg: '#dcfce7', text: '#166534', label: 'system' },
++    const:       { bg: '#dcfce7', text: '#166534', label: 'const' },
++    eq_ref:      { bg: '#dcfce7', text: '#166534', label: 'eq_ref' },
++    ref:         { bg: '#dbeafe', text: '#1e40af', label: 'ref' },
++    range:       { bg: '#fef9c3', text: '#854d0e', label: 'range' },
++    index_merge: { bg: '#fef9c3', text: '#854d0e', label: 'index_merge' },
++    index:       { bg: '#fef3c7', text: '#92400e', label: 'index' },
++    ALL:         { bg: '#fee2e2', text: '#991b1b', label: 'ALL (full scan)' },
++};
++
++function onProfilerDatabaseChange() {
++    profilerDatabase = document.getElementById('profiler-database').value;
++}
++
++/* ---------------------------------------------------------------- */
++/* Tabs                                                              */
++/* ---------------------------------------------------------------- */
++
++function showProfilerTab(tab) {
++    document.querySelectorAll('.profiler-tab').forEach(el => el.classList.add('hidden'));
++    document.getElementById('profiler-tab-' + tab).classList.remove('hidden');
++
++    document.querySelectorAll('.profiler-tab-btn').forEach(btn => {
++        const active = btn.dataset.tab === tab;
++        btn.classList.toggle('bg-indigo-50', active);
++        btn.classList.toggle('text-indigo-700', active);
++        btn.classList.toggle('text-gray-600', !active);
++    });
++
++    if (tab === 'slow' && !document.getElementById('profiler-slow-results').dataset.loaded) {
++        loadSlowQueries();
++    }
++    if (tab === 'history' && !document.getElementById('profiler-history-results').dataset.loaded) {
++        loadProfilerHistory();
++    }
++}
++
++/* ---------------------------------------------------------------- */
++/* Profile a query                                                   */
++/* ---------------------------------------------------------------- */
++
++function runProfiledQuery() {
++    const query = document.getElementById('profiler-query').value.trim();
++    const resultsDiv = document.getElementById('profiler-run-results');
++
++    if (!query) {
++        showToast('Enter a query to profile', 'error');
++        return;
++    }
++    if (!profilerDatabase) {
++        showToast('Select a database first', 'error');
++        return;
++    }
++
++    resultsDiv.innerHTML = '<div class="flex items-center justify-center py-12"><div class="loader"></div></div>';
++
++    fetch('handlers/profiler_handler.php', {
++        method: 'POST',
++        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
++        body: new URLSearchParams({ action: 'profile_query', database: profilerDatabase, query })
++    })
++    .then(res => res.json())
++    .then(res => {
++        if (!res.success) {
++            resultsDiv.innerHTML = profilerErrorBox(res.message);
++            return;
++        }
++        resultsDiv.innerHTML = renderProfileResult(res.data);
++    })
++    .catch(() => {
++        resultsDiv.innerHTML = profilerErrorBox('Request failed');
++    });
++}
++
++function profilerErrorBox(message) {
++    return `<div class="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-sm flex items-start gap-2">
++        <i class="fas fa-exclamation-circle mt-0.5"></i>
++        <span>${escapeHtml(message || 'Something went wrong')}</span>
++    </div>`;
++}
++
++function renderProfileResult(d) {
++    if (d.error) {
++        return profilerErrorBox(d.error);
++    }
++
++    const indexBadges = (d.indexes_used && d.indexes_used.length)
++        ? d.indexes_used.map(k => `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-mono mr-1 mb-1"><i class="fas fa-key text-[10px]"></i>${escapeHtml(k)}</span>`).join('')
++        : '<span class="text-gray-400 text-sm italic">No index used</span>';
++
++    const metrics = `
++    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
++        ${profilerMetricCard('Execution Time', d.execution_time_ms + ' ms', 'fa-stopwatch', d.execution_time_ms > 500 ? 'text-red-600' : 'text-indigo-600')}
++        ${profilerMetricCard('Rows Scanned', profilerFmtNum(d.rows_scanned), 'fa-search', d.rows_scanned > 10000 ? 'text-red-600' : 'text-gray-800')}
++        ${profilerMetricCard('Rows Returned', profilerFmtNum(d.rows_returned), 'fa-table', 'text-gray-800')}
++        ${profilerMetricCard('Full Table Scans', d.full_table_scans, 'fa-triangle-exclamation', d.full_table_scans > 0 ? 'text-red-600' : 'text-green-600')}
++    </div>`;
++
++    const indexSection = `
++    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-6">
++        <h3 class="text-sm font-semibold text-gray-700 uppercase mb-2">Indexes Used</h3>
++        <div>${indexBadges}</div>
++    </div>`;
++
++    const explainTree = `
++    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-6">
++        <h3 class="text-sm font-semibold text-gray-700 uppercase mb-3">EXPLAIN Visualization</h3>
++        ${d.explain_json ? renderExplainTree(d.explain_json) : '<p class="text-sm text-gray-400 italic">EXPLAIN plan not available for this query.</p>'}
++    </div>`;
++
++    const classicTable = (d.explain_classic && d.explain_classic.length) ? `
++    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-6 overflow-x-auto">
++        <h3 class="text-sm font-semibold text-gray-700 uppercase mb-3">Classic EXPLAIN</h3>
++        ${profilerTable(d.explain_classic)}
++    </div>` : '';
++
++    const previewTable = (d.preview_rows && d.preview_rows.length) ? `
++    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 overflow-x-auto">
++        <h3 class="text-sm font-semibold text-gray-700 uppercase mb-3">Result Preview (first ${d.preview_rows.length})</h3>
++        ${profilerTable(d.preview_rows)}
++    </div>` : '';
++
++    return metrics + indexSection + explainTree + classicTable + previewTable;
++}
++
++function profilerMetricCard(label, value, icon, colorClass) {
++    return `<div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
++        <div class="flex items-center gap-2 text-gray-400 text-xs font-semibold uppercase mb-1">
++            <i class="fas ${icon}"></i> ${label}
++        </div>
++        <div class="text-2xl font-bold ${colorClass}">${value}</div>
++    </div>`;
++}
++
++function profilerFmtNum(n) {
++    if (n === null || n === undefined) return '—';
++    return Number(n).toLocaleString();
++}
++
++function profilerTable(rows) {
++    if (!rows.length) return '<p class="text-sm text-gray-400 italic">No rows</p>';
++    const cols = Object.keys(rows[0]);
++    let html = '<table class="w-full text-sm"><thead><tr class="border-b border-gray-200">';
++    cols.forEach(c => html += `<th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase">${escapeHtml(c)}</th>`);
++    html += '</tr></thead><tbody class="divide-y divide-gray-100">';
++    rows.forEach(row => {
++        html += '<tr class="hover:bg-gray-50">';
++        cols.forEach(c => {
++            const v = row[c];
++            html += `<td class="px-3 py-2 text-gray-700">${v !== null && v !== undefined ? escapeHtml(String(v)) : '<span class="text-gray-300 italic">NULL</span>'}</td>`;
++        });
++        html += '</tr>';
++    });
++    html += '</tbody></table>';
++    return html;
++}
++
++/* ---------------------------------------------------------------- */
++/* EXPLAIN JSON -> visual tree                                       */
++/* ---------------------------------------------------------------- */
++
++// Keys that represent structural groupings worth their own labeled box
++const PROFILER_GROUP_LABELS = {
++    query_block: 'Query Block',
++    nested_loop: 'Nested Loop Join',
++    ordering_operation: 'Ordering',
++    grouping_operation: 'Grouping',
++    duplicates_removal: 'Duplicate Removal',
++    materialized_from_subquery: 'Materialized Subquery',
++    attached_subqueries: 'Attached Subqueries',
++    union_result: 'Union',
++};
++
++function renderExplainTree(node, depth) {
++    depth = depth || 0;
++    if (!node || typeof node !== 'object') return '';
++
++    let html = '';
++
++    if (Array.isArray(node)) {
++        node.forEach(item => { html += renderExplainTree(item, depth); });
++        return html;
++    }
++
++    if (node.table && typeof node.table === 'object') {
++        html += renderExplainTableBox(node.table, depth);
++    }
++
++    Object.keys(node).forEach(key => {
++        if (key === 'table') return;
++        const value = node[key];
++        if (value && typeof value === 'object') {
++            const label = PROFILER_GROUP_LABELS[key] || key;
++            const inner = renderExplainTree(value, depth + 1);
++            if (inner) {
++                html += `<div class="explain-group" style="margin-left:${depth * 18}px; border-left:2px solid #e5e7eb; padding-left:12px; margin-top:6px;">
++                    <div class="text-xs font-semibold text-gray-400 uppercase mb-1">${escapeHtml(label)}</div>
++                    ${inner}
++                </div>`;
++            }
++        }
++    });
++
++    return html;
++}
++
++function renderExplainTableBox(t, depth) {
++    const accessType = t.access_type || 'ALL';
++    const color = PROFILER_ACCESS_COLORS[accessType] || PROFILER_ACCESS_COLORS.ALL;
++    const key = t.key || null;
++    const rows = t.rows_examined_per_scan;
++    const filtered = t.filtered;
++    const possibleKeys = Array.isArray(t.possible_keys) ? t.possible_keys.join(', ') : (t.possible_keys || '—');
++    const extra = [];
++    if (t.using_index) extra.push('Using index');
++    if (t.using_filesort) extra.push('Using filesort');
++    if (t.using_temporary_table) extra.push('Using temporary table');
++    if (t.attached_condition) extra.push('Has WHERE condition');
++
++    return `<div style="margin-left:${depth * 18}px" class="rounded-lg border border-gray-200 p-3 mt-2 bg-gray-50">
++        <div class="flex items-center justify-between flex-wrap gap-2">
++            <div class="flex items-center gap-2">
++                <i class="fas fa-table text-gray-400"></i>
++                <span class="font-semibold text-gray-800 text-sm">${escapeHtml(t.table_name || 'derived')}</span>
++                <span class="px-2 py-0.5 rounded text-xs font-mono" style="background:${color.bg};color:${color.text}">${escapeHtml(color.label)}</span>
++            </div>
++            <div class="text-xs text-gray-500">
++                ${rows !== undefined ? `~${profilerFmtNum(rows)} rows` : ''}${filtered !== undefined ? ` · ${filtered}% filtered` : ''}
++            </div>
++        </div>
++        <div class="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-xs text-gray-600">
++            <div><span class="text-gray-400">Key used:</span> ${key ? `<span class="font-mono text-blue-700">${escapeHtml(key)}</span>` : '<span class="text-red-600">none</span>'}</div>
++            <div><span class="text-gray-400">Possible keys:</span> <span class="font-mono">${escapeHtml(String(possibleKeys))}</span></div>
++        </div>
++        ${extra.length ? `<div class="mt-2 flex flex-wrap gap-1">${extra.map(e => `<span class="px-2 py-0.5 rounded bg-amber-50 text-amber-700 text-xs">${escapeHtml(e)}</span>`).join('')}</div>` : ''}
++    </div>`;
++}
++
++/* ---------------------------------------------------------------- */
++/* Slow queries                                                      */
++/* ---------------------------------------------------------------- */
++
++function loadSlowQueries() {
++    const container = document.getElementById('profiler-slow-results');
++    container.innerHTML = '<div class="flex items-center justify-center py-12"><div class="loader"></div></div>';
++
++    fetch('handlers/profiler_handler.php', {
++        method: 'POST',
++        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
++        body: new URLSearchParams({ action: 'slow_queries', limit: 25 })
++    })
++    .then(res => res.json())
++    .then(res => {
++        container.dataset.loaded = '1';
++        if (!res.success) {
++            container.innerHTML = profilerErrorBox(res.message);
++            return;
++        }
++        container.innerHTML = renderSlowQueries(res.data);
++    })
++    .catch(() => { container.innerHTML = profilerErrorBox('Request failed'); });
++}
++
++function renderSlowQueries(data) {
++    const settings = data.settings || {};
++    const banner = `<div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4 text-xs text-gray-600 flex flex-wrap gap-4">
++        <span><i class="fas fa-microchip text-gray-400 mr-1"></i> performance_schema: <strong>${escapeHtml(String(settings.performance_schema ?? 'unknown'))}</strong></span>
++        <span><i class="fas fa-clock text-gray-400 mr-1"></i> long_query_time: <strong>${escapeHtml(String(settings.long_query_time ?? '—'))}s</strong></span>
++        <span><i class="fas fa-file-alt text-gray-400 mr-1"></i> slow_query_log: <strong>${escapeHtml(String(settings.slow_query_log ?? '—'))}</strong></span>
++    </div>`;
++
++    if (!data.available) {
++        return banner + `<div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-4 text-sm">
++            <i class="fas fa-info-circle mr-1"></i>
++            performance_schema is not enabled on this server, so aggregated slow-query statistics aren't available.
++            Enable it in MySQL (<code class="font-mono">performance_schema = ON</code>) to see this data, or use the profiler above to profile individual queries.
++        </div>`;
++    }
++
++    if (!data.rows.length) {
++        return banner + '<p class="text-sm text-gray-400 italic">No query statistics recorded yet.</p>';
++    }
++
++    let html = banner + '<div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto"><table class="w-full text-sm">';
++    html += `<thead><tr class="border-b border-gray-200 bg-gray-50">
++        <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Query</th>
++        <th class="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase">DB</th>
++        <th class="px-3 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Executions</th>
++        <th class="px-3 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Avg (ms)</th>
++        <th class="px-3 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Max (ms)</th>
++        <th class="px-3 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Rows Examined</th>
++        <th class="px-3 py-2 text-right text-xs font-semibold text-gray-500 uppercase">No Index</th>
++    </tr></thead><tbody class="divide-y divide-gray-100">`;
++
++    data.rows.forEach(r => {
++        const slow = Number(r.avg_time_ms) > 100;
++        const noIndex = Number(r.no_index_used_count) > 0;
++        html += `<tr class="hover:bg-gray-50">
++            <td class="px-3 py-2 font-mono text-xs text-gray-700 max-w-md truncate" title="${escapeHtml(r.query_pattern || '')}">${escapeHtml((r.query_pattern || '').slice(0, 90))}</td>
++            <td class="px-3 py-2 text-gray-600">${escapeHtml(r.db_name || '—')}</td>
++            <td class="px-3 py-2 text-right text-gray-600">${profilerFmtNum(r.exec_count)}</td>
++            <td class="px-3 py-2 text-right font-semibold ${slow ? 'text-red-600' : 'text-gray-800'}">${r.avg_time_ms}</td>
++            <td class="px-3 py-2 text-right text-gray-600">${r.max_time_ms}</td>
++            <td class="px-3 py-2 text-right text-gray-600">${profilerFmtNum(r.rows_examined)}</td>
++            <td class="px-3 py-2 text-right">${noIndex ? '<span class="px-2 py-0.5 rounded bg-red-50 text-red-600 text-xs">yes</span>' : '<span class="text-gray-300">—</span>'}</td>
++        </tr>`;
++    });
++
++    html += '</tbody></table></div>';
++    return html;
++}
++
++/* ---------------------------------------------------------------- */
++/* History                                                            */
++/* ---------------------------------------------------------------- */
++
++function loadProfilerHistory() {
++    const container = document.getElementById('profiler-history-results');
++    container.innerHTML = '<div class="flex items-center justify-center py-12"><div class="loader"></div></div>';
++
++    fetch('handlers/profiler_handler.php', {
++        method: 'POST',
++        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
++        body: new URLSearchParams({ action: 'history', limit: 20 })
++    })
++    .then(res => res.json())
++    .then(res => {
++        container.dataset.loaded = '1';
++        if (!res.success) {
++            container.innerHTML = profilerErrorBox(res.message);
++            return;
++        }
++        container.innerHTML = renderProfilerHistory(res.data);
++    })
++    .catch(() => { container.innerHTML = profilerErrorBox('Request failed'); });
++}
++
++function renderProfilerHistory(items) {
++    if (!items.length) {
++        return '<p class="text-sm text-gray-400 italic">No queries profiled yet. Run one from the "Profile a Query" tab.</p>';
++    }
++
++    return items.map(h => `
++        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-3 hover:border-indigo-300 transition cursor-pointer" onclick="reuseHistoryQuery(${escapeHtml(JSON.stringify(h.query))}, ${escapeHtml(JSON.stringify(h.database))})">
++            <div class="flex items-center justify-between mb-2">
++                <span class="text-xs text-gray-400">${escapeHtml(h.timestamp)} · <span class="font-semibold text-gray-500">${escapeHtml(h.database)}</span></span>
++                <div class="flex items-center gap-3 text-xs">
++                    <span class="text-indigo-600 font-semibold">${h.execution_time_ms} ms</span>
++                    <span class="text-gray-500">${profilerFmtNum(h.rows_scanned)} scanned</span>
++                    <span class="text-gray-500">${profilerFmtNum(h.rows_returned)} returned</span>
++                    ${h.full_table_scans > 0 ? '<span class="text-red-600"><i class="fas fa-triangle-exclamation"></i> full scan</span>' : ''}
++                </div>
++            </div>
++            <code class="text-xs font-mono text-gray-700 block truncate">${escapeHtml(h.query)}</code>
++        </div>
++    `).join('');
++}
++
++function reuseHistoryQuery(query, dbName) {
++    showProfilerTab('run');
++    document.querySelectorAll('.profiler-tab-btn').forEach(btn => {
++        const active = btn.dataset.tab === 'run';
++        btn.classList.toggle('bg-indigo-50', active);
++        btn.classList.toggle('text-indigo-700', active);
++        btn.classList.toggle('text-gray-600', !active);
++    });
++    document.getElementById('profiler-query').value = query;
++    const select = document.getElementById('profiler-database');
++    if (select && [...select.options].some(o => o.value === dbName)) {
++        select.value = dbName;
++        profilerDatabase = dbName;
++    }
++    window.scrollTo({ top: 0, behavior: 'smooth' });
++}
++
++function clearProfilerHistory() {
++    if (!confirm('Clear all profiled query history?')) return;
++
++    fetch('handlers/profiler_handler.php', {
++        method: 'POST',
++        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
++        body: new URLSearchParams({ action: 'clear_history' })
++    })
++    .then(res => res.json())
++    .then(res => {
++        if (res.success) {
++            showToast('History cleared');
++            document.getElementById('profiler-history-results').dataset.loaded = '';
++            loadProfilerHistory();
++        } else {
++            showToast(res.message, 'error');
++        }
++    });
++}
+diff --git a/handlers/profiler_handler.php b/handlers/profiler_handler.php
+new file mode 100644
+index 0000000..1b79656
+--- /dev/null
++++ b/handlers/profiler_handler.php
+@@ -0,0 +1,76 @@
++<?php
++/**
++ * Query Profiler AJAX Handler
++ */
++
++session_start();
++require_once __DIR__ . '/../includes/Auth.php';
++require_once __DIR__ . '/../config.php';
++require_once __DIR__ . '/../includes/Database.php';
++require_once __DIR__ . '/../includes/ServerManager.php';
++require_once __DIR__ . '/../includes/DatabaseOperations.php';
++require_once __DIR__ . '/../includes/QueryProfiler.php';
++
++header('Content-Type: application/json');
++
++// All AJAX endpoints require authentication
++if (!Auth::check()) {
++    http_response_code(401);
++    echo json_encode(['success' => false, 'message' => 'Unauthenticated']);
++    exit;
++}
++
++if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !isset($_POST['action'])) {
++    echo json_encode(['success' => false, 'message' => 'Invalid request']);
++    exit;
++}
++
++if (!ALLOW_SQL_QUERIES) {
++    echo json_encode(['success' => false, 'message' => 'SQL query execution is disabled on this server']);
++    exit;
++}
++
++try {
++    $db       = Database::getInstance();
++    $profiler = new QueryProfiler($db->getConnection());
++
++    switch ($_POST['action']) {
++
++        case 'profile_query':
++            $database = $_POST['database'] ?? '';
++            $query    = $_POST['query'] ?? '';
++
++            if (!$database || !$query) {
++                throw new Exception('Database and query are required');
++            }
++
++            $result = $profiler->profile($database, $query);
++
++            echo json_encode(['success' => true, 'data' => $result]);
++            break;
++
++        case 'slow_queries':
++            $limit  = isset($_POST['limit']) ? (int)$_POST['limit'] : 25;
++            $result = $profiler->getSlowQueries($limit);
++
++            echo json_encode(['success' => true, 'data' => $result]);
++            break;
++
++        case 'history':
++            $limit  = isset($_POST['limit']) ? (int)$_POST['limit'] : 20;
++            $result = $profiler->getHistory($limit);
++
++            echo json_encode(['success' => true, 'data' => $result]);
++            break;
++
++        case 'clear_history':
++            $profiler->clearHistory();
++            echo json_encode(['success' => true, 'message' => 'History cleared']);
++            break;
++
++        default:
++            throw new Exception('Unknown action');
++    }
++} catch (Exception $e) {
++    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
++}
+diff --git a/includes/QueryProfiler.php b/includes/QueryProfiler.php
+new file mode 100644
+index 0000000..334c096
+--- /dev/null
++++ b/includes/QueryProfiler.php
+@@ -0,0 +1,255 @@
++<?php
++/**
++ * Query Profiler
++ * Profiles SELECT queries: execution time, rows scanned, indexes used,
++ * EXPLAIN (classic + JSON tree), and surfaces slow queries via
++ * performance_schema.events_statements_summary_by_digest.
++ */
++class QueryProfiler {
++    private PDO $conn;
++    private string $historyFile;
++    private int $maxHistory = 100;
++
++    public function __construct(PDO $conn) {
++        $this->conn = $conn;
++
++        $dir = __DIR__ . '/../storage/profiler';
++        if (!is_dir($dir)) {
++            mkdir($dir, 0755, true);
++        }
++        $this->historyFile = $dir . '/history.json';
++    }
++
++    /**
++     * Profile a single read-only query against a database.
++     * Only SELECT / WITH statements are allowed — the profiler is a
++     * read-only diagnostic tool, not a general query executor.
++     */
++    public function profile(string $database, string $sql): array {
++        $sql = trim($sql);
++        $sql = rtrim($sql, "; \t\n\r\0\x0B");
++
++        if ($sql === '') {
++            throw new Exception('Query is required');
++        }
++        if (!preg_match('/^\s*(SELECT|WITH)\b/i', $sql)) {
++            throw new Exception('Only SELECT queries can be profiled');
++        }
++        if (!$database) {
++            throw new Exception('Database is required');
++        }
++
++        $this->conn->exec('USE `' . str_replace('`', '', $database) . '`');
++
++        $explainJson    = $this->explainJson($sql);
++        $explainClassic = $this->explainClassic($sql);
++        $summary        = $this->summarizeExplain($explainJson, $explainClassic);
++
++        $error   = null;
++        $rows    = [];
++        $rowCount = 0;
++
++        $start = microtime(true);
++        try {
++            $stmt = $this->conn->query($sql);
++            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
++            $rowCount = count($rows);
++        } catch (PDOException $e) {
++            $error = $e->getMessage();
++        }
++        $elapsedMs = round((microtime(true) - $start) * 1000, 3);
++
++        $result = [
++            'query'              => $sql,
++            'database'           => $database,
++            'execution_time_ms'  => $elapsedMs,
++            'rows_returned'      => $rowCount,
++            'rows_scanned'       => $summary['rows_scanned'],
++            'indexes_used'       => $summary['indexes_used'],
++            'full_table_scans'   => $summary['full_table_scans'],
++            'is_slow'            => $elapsedMs > 1000 || $summary['full_table_scans'] > 0,
++            'explain_json'       => $explainJson,
++            'explain_classic'    => $explainClassic,
++            'preview_rows'       => array_slice($rows, 0, 25),
++            'error'              => $error,
++            'timestamp'          => date('Y-m-d H:i:s'),
++        ];
++
++        if (!$error) {
++            $this->appendHistory($result);
++        }
++
++        return $result;
++    }
++
++    /** EXPLAIN FORMAT=JSON — used to build the visual tree and compute stats */
++    private function explainJson(string $sql): ?array {
++        try {
++            $stmt = $this->conn->query('EXPLAIN FORMAT=JSON ' . $sql);
++            $row  = $stmt->fetch(PDO::FETCH_ASSOC);
++            $raw  = $row['EXPLAIN'] ?? null;
++            return $raw ? json_decode($raw, true) : null;
++        } catch (PDOException $e) {
++            return null;
++        }
++    }
++
++    /** Classic tabular EXPLAIN — shown alongside the tree view */
++    private function explainClassic(string $sql): array {
++        try {
++            $stmt = $this->conn->query('EXPLAIN ' . $sql);
++            return $stmt->fetchAll(PDO::FETCH_ASSOC);
++        } catch (PDOException $e) {
++            return [];
++        }
++    }
++
++    /** Walk the EXPLAIN JSON tree to total rows examined and collect index usage */
++    private function summarizeExplain(?array $explainJson, array $explainClassic): array {
++        $rowsScanned = 0;
++        $indexes     = [];
++        $fullScans   = 0;
++        $found       = false;
++
++        if ($explainJson) {
++            $walk = function ($node) use (&$walk, &$rowsScanned, &$indexes, &$fullScans, &$found) {
++                if (!is_array($node)) {
++                    return;
++                }
++                if (isset($node['table']) && is_array($node['table'])) {
++                    $t = $node['table'];
++                    $found = true;
++                    if (isset($t['rows_examined_per_scan'])) {
++                        $rowsScanned += (int)$t['rows_examined_per_scan'];
++                    }
++                    if (!empty($t['key'])) {
++                        $indexes[] = $t['key'];
++                    } elseif (($t['access_type'] ?? '') === 'ALL') {
++                        $fullScans++;
++                    }
++                }
++                foreach ($node as $value) {
++                    if (is_array($value)) {
++                        $walk($value);
++                    }
++                }
++            };
++            $walk($explainJson);
++        }
++
++        // Fallback to the classic EXPLAIN rows if JSON parsing found nothing
++        if (!$found && $explainClassic) {
++            foreach ($explainClassic as $row) {
++                $rowsScanned += (int)($row['rows'] ?? 0);
++                if (!empty($row['key'])) {
++                    $indexes[] = $row['key'];
++                } elseif (($row['type'] ?? '') === 'ALL') {
++                    $fullScans++;
++                }
++            }
++        }
++
++        return [
++            'rows_scanned'     => $rowsScanned,
++            'indexes_used'     => array_values(array_unique($indexes)),
++            'full_table_scans' => $fullScans,
++        ];
++    }
++
++    /**
++     * Server-wide slow query stats from performance_schema.
++     * Falls back gracefully with a status flag if performance_schema is off.
++     */
++    public function getSlowQueries(int $limit = 25): array {
++        $out = ['available' => false, 'rows' => [], 'settings' => [], 'error' => null];
++
++        try {
++            $peVal  = $this->fetchVariable('performance_schema');
++            $lqtVal = $this->fetchVariable('long_query_time');
++            $sqlVal = $this->fetchVariable('slow_query_log');
++
++            $out['settings'] = [
++                'performance_schema' => $peVal ?? 'unknown',
++                'long_query_time'    => $lqtVal,
++                'slow_query_log'     => $sqlVal,
++            ];
++
++            if (strtoupper((string)$peVal) !== 'ON') {
++                return $out;
++            }
++
++            $limit = max(1, min(200, $limit));
++            $stmt = $this->conn->prepare("
++                SELECT
++                    DIGEST_TEXT             AS query_pattern,
++                    SCHEMA_NAME              AS db_name,
++                    COUNT_STAR               AS exec_count,
++                    ROUND(AVG_TIMER_WAIT  / 1000000000, 3) AS avg_time_ms,
++                    ROUND(MAX_TIMER_WAIT  / 1000000000, 3) AS max_time_ms,
++                    ROUND(SUM_TIMER_WAIT  / 1000000000, 3) AS total_time_ms,
++                    SUM_ROWS_EXAMINED       AS rows_examined,
++                    SUM_ROWS_SENT           AS rows_sent,
++                    SUM_NO_INDEX_USED       AS no_index_used_count,
++                    LAST_SEEN               AS last_seen
++                FROM performance_schema.events_statements_summary_by_digest
++                WHERE DIGEST_TEXT IS NOT NULL
++                ORDER BY AVG_TIMER_WAIT DESC
++                LIMIT $limit
++            ");
++            $stmt->execute();
++            $out['rows']      = $stmt->fetchAll(PDO::FETCH_ASSOC);
++            $out['available'] = true;
++        } catch (PDOException $e) {
++            $out['error'] = $e->getMessage();
++        }
++
++        return $out;
++    }
++
++    private function fetchVariable(string $name): ?string {
++        $stmt = $this->conn->query("SHOW VARIABLES LIKE '$name'");
++        $row  = $stmt->fetch(PDO::FETCH_ASSOC);
++        return $row['Value'] ?? null;
++    }
++
++    /** Most recent profiled queries (newest first) */
++    public function getHistory(int $limit = 20): array {
++        $data = $this->readHistory();
++        return array_slice(array_reverse($data), 0, $limit);
++    }
++
++    public function clearHistory(): void {
++        if (file_exists($this->historyFile)) {
++            unlink($this->historyFile);
++        }
++    }
++
++    private function readHistory(): array {
++        if (!file_exists($this->historyFile)) {
++            return [];
++        }
++        $decoded = json_decode((string)file_get_contents($this->historyFile), true);
++        return is_array($decoded) ? $decoded : [];
++    }
++
++    private function appendHistory(array $entry): void {
++        $data = $this->readHistory();
++
++        $data[] = [
++            'query'             => mb_substr($entry['query'], 0, 1000),
++            'database'          => $entry['database'],
++            'execution_time_ms' => $entry['execution_time_ms'],
++            'rows_returned'     => $entry['rows_returned'],
++            'rows_scanned'      => $entry['rows_scanned'],
++            'indexes_used'      => $entry['indexes_used'],
++            'full_table_scans'  => $entry['full_table_scans'],
++            'timestamp'         => $entry['timestamp'],
++        ];
++
++        if (count($data) > $this->maxHistory) {
++            $data = array_slice($data, -$this->maxHistory);
++        }
++
++        file_put_contents($this->historyFile, json_encode($data, JSON_PRETTY_PRINT));
++    }
++}
+diff --git a/profiler.php b/profiler.php
+new file mode 100644
+index 0000000..54ea998
+--- /dev/null
++++ b/profiler.php
+@@ -0,0 +1,141 @@
++<?php
++/**
++ * Query Profiler
++ * Execution time, rows scanned, indexes used, slow queries, EXPLAIN visualization.
++ */
++
++session_start();
++
++require_once __DIR__ . '/config.php';
++require_once __DIR__ . '/includes/Auth.php';
++require_once __DIR__ . '/includes/Database.php';
++require_once __DIR__ . '/includes/ServerManager.php';
++require_once __DIR__ . '/includes/DatabaseOperations.php';
++
++Auth::require();
++
++$connectionError = null;
++$databases = [];
++$selectedDatabase = $_GET['database'] ?? null;
++
++try {
++    $db    = Database::getInstance();
++    $dbOps = new DatabaseOperations($db->getConnection());
++    $databases = $dbOps->getDatabases();
++
++    if (!$selectedDatabase && $databases) {
++        $selectedDatabase = $databases[0];
++    }
++} catch (\Exception $e) {
++    $connectionError = $e->getMessage();
++}
++
++include __DIR__ . '/views/header.php';
++?>
++
++<?php if ($connectionError): ?>
++<div class="flex items-center justify-center min-h-screen">
++    <div class="bg-white rounded-2xl shadow-xl p-10 max-w-lg w-full text-center">
++        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
++            <i class="fas fa-plug text-red-500 text-2xl"></i>
++        </div>
++        <h2 class="text-xl font-bold text-gray-800 mb-2">Connection Failed</h2>
++        <p class="text-red-400 text-xs font-mono bg-red-50 rounded p-3 mt-3 mb-6 text-left break-all"><?php echo htmlspecialchars($connectionError); ?></p>
++        <a href="index.php" class="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium">Back to Database Manager</a>
++    </div>
++</div>
++<?php else: ?>
++<div class="flex h-screen bg-gray-50">
++    <!-- Sidebar -->
++    <div class="w-64 bg-white border-r border-gray-200 flex flex-col">
++        <div class="p-4 border-b border-gray-200">
++            <a href="index.php" class="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4">
++                <i class="fas fa-arrow-left"></i>
++                <span>Back to Database Manager</span>
++            </a>
++            <h1 class="text-lg font-bold text-gray-800 flex items-center gap-2">
++                <i class="fas fa-tachometer-alt text-indigo-600"></i>
++                Query Profiler
++            </h1>
++            <p class="text-sm text-gray-500 mt-1">Execution time, scans & EXPLAIN</p>
++        </div>
++
++        <div class="p-4 border-b border-gray-200">
++            <label class="block text-xs font-semibold text-gray-500 uppercase mb-2">Database</label>
++            <select id="profiler-database" onchange="onProfilerDatabaseChange()"
++                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
++                <?php foreach ($databases as $db_name): ?>
++                    <option value="<?php echo htmlspecialchars($db_name); ?>" <?php echo $db_name === $selectedDatabase ? 'selected' : ''; ?>>
++                        <?php echo htmlspecialchars($db_name); ?>
++                    </option>
++                <?php endforeach; ?>
++            </select>
++        </div>
++
++        <nav class="flex-1 overflow-y-auto p-3 space-y-1">
++            <button onclick="showProfilerTab('run')" data-tab="run" class="profiler-tab-btn w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 bg-indigo-50 text-indigo-700">
++                <i class="fas fa-play-circle"></i> Profile a Query
++            </button>
++            <button onclick="showProfilerTab('slow')" data-tab="slow" class="profiler-tab-btn w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 text-gray-600 hover:bg-gray-50">
++                <i class="fas fa-hourglass-half"></i> Slow Queries
++            </button>
++            <button onclick="showProfilerTab('history')" data-tab="history" class="profiler-tab-btn w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 text-gray-600 hover:bg-gray-50">
++                <i class="fas fa-history"></i> History
++            </button>
++        </nav>
++    </div>
++
++    <!-- Main content -->
++    <div class="flex-1 overflow-y-auto">
++
++        <!-- Tab: Profile a Query -->
++        <section id="profiler-tab-run" class="profiler-tab p-6 max-w-6xl mx-auto">
++            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-6">
++                <label class="block text-xs font-semibold text-gray-500 uppercase mb-2">SQL query (SELECT only)</label>
++                <textarea id="profiler-query" rows="5" spellcheck="false" placeholder="SELECT * FROM orders WHERE customer_id = 42"
++                    class="w-full font-mono text-sm border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
++                <div class="flex items-center justify-between mt-3">
++                    <p class="text-xs text-gray-400">EXPLAIN and a live execution both run against the selected database.</p>
++                    <div class="flex gap-2">
++                        <button onclick="document.getElementById('profiler-query').value=''" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Clear</button>
++                        <button onclick="runProfiledQuery()" class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm font-medium flex items-center gap-2">
++                            <i class="fas fa-play"></i> Run & Profile
++                        </button>
++                    </div>
++                </div>
++            </div>
++
++            <div id="profiler-run-results"></div>
++        </section>
++
++        <!-- Tab: Slow Queries -->
++        <section id="profiler-tab-slow" class="profiler-tab p-6 max-w-6xl mx-auto hidden">
++            <div class="flex items-center justify-between mb-4">
++                <h2 class="text-lg font-semibold text-gray-800">Slow Queries</h2>
++                <button onclick="loadSlowQueries()" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-700 flex items-center gap-2">
++                    <i class="fas fa-sync-alt"></i> Refresh
++                </button>
++            </div>
++            <div id="profiler-slow-results">
++                <div class="flex items-center justify-center py-12"><div class="loader"></div></div>
++            </div>
++        </section>
++
++        <!-- Tab: History -->
++        <section id="profiler-tab-history" class="profiler-tab p-6 max-w-6xl mx-auto hidden">
++            <div class="flex items-center justify-between mb-4">
++                <h2 class="text-lg font-semibold text-gray-800">Recent Profiled Queries</h2>
++                <button onclick="clearProfilerHistory()" class="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm flex items-center gap-2">
++                    <i class="fas fa-trash-alt"></i> Clear History
++                </button>
++            </div>
++            <div id="profiler-history-results">
++                <div class="flex items-center justify-center py-12"><div class="loader"></div></div>
++            </div>
++        </section>
++    </div>
++</div>
++<?php endif; ?>
++
++<script src="assets/js/profiler.js"></script>
++<?php include __DIR__ . '/views/footer.php'; ?>
+diff --git a/storage/profiler/.gitkeep b/storage/profiler/.gitkeep
+new file mode 100644
+index 0000000..e69de29
+diff --git a/views/sidebar.php b/views/sidebar.php
+index 19ee6c5..5b5ea3a 100644
+--- a/views/sidebar.php
++++ b/views/sidebar.php
+@@ -18,6 +18,11 @@
+                 <i class="fas fa-archive"></i>
+                 <span class="font-medium">Backup Manager</span>
+             </a>
++            <a href="profiler.php<?php echo $selectedDatabase ? '?database=' . urlencode($selectedDatabase) : ''; ?>"
++               class="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-lg hover:from-teal-600 hover:to-cyan-700 transition-all shadow-sm text-sm">
++                <i class="fas fa-tachometer-alt"></i>
++                <span class="font-medium">Query Profiler</span>
++            </a>
+         </div>
+     </div>
+ 
