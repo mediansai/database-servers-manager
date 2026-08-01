@@ -98,9 +98,11 @@ http://localhost/database-servers-manager/
   <tr>
     <td align="center"><strong>🔐 File & Schema Manager</strong><br><em>Manage database as schemas</em>
     <br />
+    <br />
     <img src="screenshots/file-manager.png" width="100%"> 
     </td>
     <td align="center"><strong>🎨 Visual Designer</strong><br><em>Drag & drop ERD canvas</em>
+    <br />
     <br />
     <img src="screenshots/erd.png" width="100%"> 
     </td>
@@ -108,9 +110,11 @@ http://localhost/database-servers-manager/
   <tr>
     <td align="center"><strong>📊 Export</strong><br><em>Schema & data export</em>
     <br />
+    <br />
     <img src="screenshots/export.png" width="100%"> 
     </td>
     <td align="center"><strong>💾 Backups</strong><br><em>Create, restore, download</em>
+    <br />
     <br />
     <img src="screenshots/backup.png" width="100%"> 
     </td>
