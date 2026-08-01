@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://img.icons8.com/fluency/96/database-administrator.png" alt="Database Servers Manager" width="80"/>
+  <img src="/screenshots/logo.png" alt="MediansDB" width="180"/>
 </p>
 
 <h1 align="center">MediansDB (Database Servers Manager)</h1>
