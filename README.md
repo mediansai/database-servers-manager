@@ -40,10 +40,8 @@
 5. [Export](#-export)
 6. [Project Architecture](#%EF%B8%8F-project-architecture)
 7. [Roles & Permissions](#-roles--permissions)  
-8. [Configuration](#-configuration-reference)
+8. [Remote MySQL Server Configuration](#-remote-mysql-server-configuration)
 9. [Deployment Tips](#-deployment-tips)
-10. [Contributing](#-contributing)
-11. [License](#-license)
 
 ---
 
