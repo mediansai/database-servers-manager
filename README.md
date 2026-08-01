@@ -107,7 +107,10 @@ http://localhost/database-servers-manager/
 
 > Add your own screenshots to a `screenshots/` folder and reference them here:
 > ```md
-> ![Login Page](screenshots/login.png)
+> ![Backup Page](screenshots/backup.png)
+> ![ERD Page](screenshots/erd.png)
+> ![File Manager Page](screenshots/file-manager.png)
+> ![ُxport Page](screenshots/export.png)
 > ```
 
 ---
