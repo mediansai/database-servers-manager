@@ -1,6 +1,3 @@
-<p align="center">
-  <img src="/screenshots/logo.png" alt="MediansDB" width="180"/>
-</p>
 
 <h1 align="center">MediansDB (Database Servers Manager)</h1>
 
