@@ -38,8 +38,12 @@
 3. [Features](#-features)
 4. [Backup](#-backup)
 5. [Export](#-export)
-6. [Configuration](#-configuration-reference)
-7. [Authentication](#-authentication)
+6. [Project Architecture](#-project-architecture)
+7. [Roles & Permissions](#-roles--permissions)  
+8. [Configuration](#-configuration-reference)
+9. [Deployment Tips](#-deployment-tips)
+10. [Contributing](#-contributing)
+11. [License](#-license)
 
 ---
 
