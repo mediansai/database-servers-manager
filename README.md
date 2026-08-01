@@ -96,8 +96,8 @@ http://localhost/database-servers-manager/
 
 <table>
   <tr>
-    <td align="center"><strong>🔐 Login</strong><br><em>Glassmorphism dark theme</em></td>
-    <td align="center"><strong>📊 Table Export</strong><br><em>Schema & data export</em></td>
+    <td align="center"><strong>🔐 File & Schema Manager</strong><br><em>Manage database as schemas</em></td>
+    <td align="center"><strong>📊 Export</strong><br><em>Schema & data export</em></td>
   </tr>
   <tr>
     <td align="center"><strong>🎨 Visual Designer</strong><br><em>Drag & drop ERD canvas</em></td>
