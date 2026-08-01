@@ -53,7 +53,7 @@
     <br />
     <img src="screenshots/erd.png" width="100%"> 
     </td>
-    <td align="center"><strong>Create table</strong><br><em>Create table, column, type, primary key, foreign key, ...</em>
+    <td align="center"><strong>Manage tables</strong><br><em>Create table, column, type, primary key, foreign key, ...</em>
     <br />
     <br />
     <img src="screenshots/create-table.png" width="100%"> 
