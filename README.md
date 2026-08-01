@@ -472,4 +472,5 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 <p align="center">
   <sub>Built with ❤️ for developers who need a modern database management tool.</sub><br>
   <sub>⭐ Star this repo if you find it useful!</sub>
+  <sub> Powered by <a href="https://medians.tech">Medians</a></sub>
 </p>
