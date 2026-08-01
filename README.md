@@ -53,10 +53,10 @@
     <br />
     <img src="screenshots/erd.png" width="100%"> 
     </td>
-    <td align="center"><strong>Relations</strong><br><em>Manage database relations</em>
+    <td align="center"><strong>Create table</strong><br><em>Create table, column, type, primary key, foreign key, ...</em>
     <br />
     <br />
-    <img src="screenshots/relations.png" width="100%"> 
+    <img src="screenshots/create-table.png" width="100%"> 
     </td>
   </tr>
   <tr>
