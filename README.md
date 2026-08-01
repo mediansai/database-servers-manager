@@ -41,10 +41,22 @@
     <br />
     <img src="screenshots/file-manager.png" width="100%"> 
     </td>
+    <td align="center"><strong>🎨 Data Management </strong><br><em>Display the database tables with data management</em>
+    <br />
+    <br />
+    <img src="screenshots/tables.png" width="100%"> 
+    </td>
+  </tr>
+  <tr>
     <td align="center"><strong>🎨 Visual Designer</strong><br><em>Drag & drop ERD canvas</em>
     <br />
     <br />
     <img src="screenshots/erd.png" width="100%"> 
+    </td>
+    <td align="center"><strong>Relations</strong><br><em>Manage database relations</em>
+    <br />
+    <br />
+    <img src="screenshots/relations.png" width="100%"> 
     </td>
   </tr>
   <tr>
