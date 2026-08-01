@@ -1,0 +1,29 @@
+# Protect storage directory
+<Directory "storage">
+    Require all denied
+</Directory>
+
+# Protect vendor directory
+<Directory "includes">
+    Require all denied
+</Directory>
+
+# Protect vendor directory
+<Directory "handlers">
+    Require all denied
+</Directory>
+
+# Protect vendor directory
+<Directory "views">
+    Require all denied
+</Directory>
+
+# Protect config file
+<Files "config.php">
+    Require all denied
+</Files>
+
+# Protect .env file
+<Files ".env">
+    Require all denied
+</Files>
