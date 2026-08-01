@@ -38,7 +38,7 @@
 3. [Features](#-features)
 4. [Backup](#-backup)
 5. [Export](#-export)
-6. [Project Architecture](#-project-architecture)
+6. [Project Architecture](#%EF%B8%8F-project-architecture)
 7. [Roles & Permissions](#-roles--permissions)  
 8. [Configuration](#-configuration-reference)
 9. [Deployment Tips](#-deployment-tips)
