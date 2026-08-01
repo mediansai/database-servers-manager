@@ -2,7 +2,7 @@
   <img src="https://img.icons8.com/fluency/96/database-administrator.png" alt="Database Servers Manager" width="80"/>
 </p>
 
-<h1 align="center">Database Servers Manager</h1>
+<h1 align="center">MediansDB (Database Servers Manager)</h1>
 
 <p align="center">
   <strong>A modern, self-hosted MySQL database management tool.</strong><br>
