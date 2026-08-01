@@ -234,6 +234,69 @@ $GLOBALS['APP_USERS'] = [
 
 ---
 
+## 🌐 Remote MySQL Server Configuration
+
+If your MySQL database server is hosted on a remote server (VPS, Cloud server, Docker container, or another machine on your local network), follow these steps to allow remote connections:
+
+### 1. Enable MySQL Remote Connections (`bind-address`)
+
+Edit your MySQL configuration file:
+- **Linux (Ubuntu/Debian):** `/etc/mysql/mysql.conf.d/mysqld.cnf` or `/etc/mysql/my.cnf`
+- **Linux (CentOS/RHEL):** `/etc/my.cnf`
+- **Windows (XAMPP):** `C:\xampp\mysql\bin\my.ini`
+
+Find the `bind-address` line and set it to `0.0.0.0` (to listen on all network interfaces) or your PHP server's specific IP:
+
+```ini
+[mysqld]
+bind-address = 0.0.0.0
+```
+
+### 2. Grant User Privileges for Remote Access
+
+Connect to MySQL on the target server and run the following SQL commands to grant permission for a user connecting from any IP (`%`) or from your specific web server IP:
+
+```sql
+-- Allow access from any IP address ('%'):
+CREATE USER 'remote_user'@'%' IDENTIFIED BY 'YourSecurePassword';
+GRANT ALL PRIVILEGES ON *.* TO 'remote_user'@'%' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+
+-- OR restrict access strictly to your Web Manager server's IP address:
+CREATE USER 'remote_user'@'192.168.1.50' IDENTIFIED BY 'YourSecurePassword';
+GRANT ALL PRIVILEGES ON *.* TO 'remote_user'@'192.168.1.50' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+```
+
+### 3. Open Firewall Port 3306
+
+Ensure port **3306** (default MySQL port) is open on your remote server:
+
+- **Ubuntu (UFW):**
+  ```bash
+  sudo ufw allow 3306/tcp
+  ```
+- **CentOS / RHEL (Firewalld):**
+  ```bash
+  sudo firewall-cmd --zone=public --add-port=3306/tcp --permanent
+  sudo firewall-cmd --reload
+  ```
+- **Cloud Security Groups (AWS EC2 / DigitalOcean / GCP):**
+  Add an Inbound Security Rule allowing TCP port **3306** from your PHP application server's IP.
+
+### 4. Restart MySQL Service
+
+Restart MySQL to apply the new configuration:
+```bash
+# Linux
+sudo systemctl restart mysql   # or mariadb
+
+# Windows
+net stop MySQL && net start MySQL
+```
+
+---
+
 ## 🏗️ Project Architecture
 
 ```

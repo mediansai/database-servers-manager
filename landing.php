@@ -228,6 +228,7 @@
             <div class="hidden md:flex items-center gap-8">
                 <a href="#features" class="text-gray-400 hover:text-white transition text-sm font-medium">Features</a>
                 <a href="#quickstart" class="text-gray-400 hover:text-white transition text-sm font-medium">Quick Start</a>
+                <a href="#remote-setup" class="text-gray-400 hover:text-white transition text-sm font-medium">Remote Setup</a>
                 <a href="#formats" class="text-gray-400 hover:text-white transition text-sm font-medium">Export Formats</a>
                 <a href="login.php" class="btn-cta text-sm" style="padding: 10px 24px; font-size: 0.85rem;">
                     <i class="fas fa-sign-in-alt"></i> Launch App
@@ -243,6 +244,7 @@
             <div class="flex flex-col gap-3">
                 <a href="#features" class="text-gray-300 hover:text-white transition text-sm font-medium py-2">Features</a>
                 <a href="#quickstart" class="text-gray-300 hover:text-white transition text-sm font-medium py-2">Quick Start</a>
+                <a href="#remote-setup" class="text-gray-300 hover:text-white transition text-sm font-medium py-2">Remote Setup</a>
                 <a href="#formats" class="text-gray-300 hover:text-white transition text-sm font-medium py-2">Export Formats</a>
                 <a href="login.php" class="btn-cta text-sm text-center" style="padding: 10px 24px;">
                     <i class="fas fa-sign-in-alt"></i> Launch App
@@ -478,6 +480,105 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ═══════════════════════════════════════════════════
+         REMOTE SERVER SETUP SECTION
+         ═══════════════════════════════════════════════════ -->
+    <section id="remote-setup" class="py-24 px-6 relative">
+        <div class="max-w-5xl mx-auto">
+
+            <!-- Section Header -->
+            <div class="text-center mb-16 reveal">
+                <span class="glass inline-block px-4 py-1.5 rounded-full text-xs font-semibold text-blue-300 tracking-widest uppercase mb-4">Remote Access</span>
+                <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">Configuring Remote MySQL Servers</h2>
+                <p class="text-gray-400 text-lg max-w-2xl mx-auto">Connecting to a MySQL database on a VPS, Cloud host, or remote server? Follow these 4 quick configuration steps.</p>
+            </div>
+
+            <!-- Grid of steps -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 reveal">
+
+                <!-- Step A: Bind Address -->
+                <div class="glass rounded-2xl p-6 md:p-8 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-blue-600 bg-opacity-20 border border-blue-500 border-opacity-30 flex items-center justify-center text-blue-400 font-bold text-sm">1</div>
+                            <h3 class="text-lg font-bold text-white">Enable Remote Bind Address</h3>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4">
+                            Edit MySQL configuration (<code class="text-blue-300 text-xs">my.cnf</code> or <code class="text-blue-300 text-xs">mysqld.cnf</code>) and allow listening on external interfaces:
+                        </p>
+                        <div class="code-block text-xs">
+                            <span class="comment"># In [mysqld] section:</span><br>
+                            <span class="var">bind-address</span> = <span class="string">0.0.0.0</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-4"><i class="fas fa-info-circle text-blue-400 mr-1"></i> Located at <code class="text-gray-400">/etc/mysql/mysql.conf.d/mysqld.cnf</code> on Ubuntu/Debian.</p>
+                </div>
+
+                <!-- Step B: MySQL User Grants -->
+                <div class="glass rounded-2xl p-6 md:p-8 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-purple-600 bg-opacity-20 border border-purple-500 border-opacity-30 flex items-center justify-center text-purple-400 font-bold text-sm">2</div>
+                            <h3 class="text-lg font-bold text-white">Grant User Privileges</h3>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4">
+                            Execute SQL on the remote server to grant access to your user from any IP (<code class="text-purple-300 text-xs">%</code>) or your PHP server IP:
+                        </p>
+                        <div class="code-block text-xs">
+                            <span class="keyword">CREATE USER</span> <span class="string">'remote_user'</span>@<span class="string">'%'</span> <span class="keyword">IDENTIFIED BY</span> <span class="string">'password'</span>;<br>
+                            <span class="keyword">GRANT ALL PRIVILEGES ON</span> *.* <span class="keyword">TO</span> <span class="string">'remote_user'</span>@<span class="string">'%'</span>;<br>
+                            <span class="keyword">FLUSH PRIVILEGES</span>;
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-4"><i class="fas fa-shield-alt text-purple-400 mr-1"></i> You can replace <code class="text-gray-400">'%'</code> with your specific web app server IP.</p>
+                </div>
+
+                <!-- Step C: Firewall Port 3306 -->
+                <div class="glass rounded-2xl p-6 md:p-8 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-600 bg-opacity-20 border border-emerald-500 border-opacity-30 flex items-center justify-center text-emerald-400 font-bold text-sm">3</div>
+                            <h3 class="text-lg font-bold text-white">Open Firewall Port 3306</h3>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4">
+                            Ensure inbound traffic on MySQL port 3306 is allowed through the remote server's firewall:
+                        </p>
+                        <div class="code-block text-xs">
+                            <span class="comment"># Ubuntu (UFW):</span><br>
+                            sudo ufw allow 3306/tcp<br><br>
+                            <span class="comment"># CentOS / RHEL (Firewalld):</span><br>
+                            sudo firewall-cmd --zone=public --add-port=3306/tcp --permanent<br>
+                            sudo firewall-cmd --reload
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-4"><i class="fas fa-cloud text-emerald-400 mr-1"></i> For AWS EC2 / DigitalOcean, allow port 3306 in Security Groups.</p>
+                </div>
+
+                <!-- Step D: Restart MySQL -->
+                <div class="glass rounded-2xl p-6 md:p-8 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-amber-600 bg-opacity-20 border border-amber-500 border-opacity-30 flex items-center justify-center text-amber-400 font-bold text-sm">4</div>
+                            <h3 class="text-lg font-bold text-white">Restart MySQL & Test</h3>
+                        </div>
+                        <p class="text-gray-400 text-sm mb-4">
+                            Restart MySQL on the remote host and add the remote server credentials to <code class="text-amber-300 text-xs">config.php</code>:
+                        </p>
+                        <div class="code-block text-xs">
+                            <span class="comment"># Linux restart command:</span><br>
+                            sudo systemctl restart mysql<br><br>
+                            <span class="comment"># In config.php:</span><br>
+                            <span class="string">'host'</span> => <span class="string">'remote-db-server.com'</span> <span class="comment">// or IP</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-4"><i class="fas fa-check-circle text-amber-400 mr-1"></i> Switch to your remote server instantly from the top bar in DB Manager!</p>
                 </div>
 
             </div>
