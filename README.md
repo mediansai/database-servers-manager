@@ -105,9 +105,9 @@ http://localhost/database-servers-manager/
   </tr>
 </table>
 
-<img src="screenshots/erd.png" width="100%"> 
-<img src="screenshots/export.png" width="100%"> 
 <img src="screenshots/file-manager.png" width="100%"> 
+<img src="screenshots/export.png" width="100%"> 
+<img src="screenshots/erd.png" width="100%"> 
 <img src="screenshots/backup.png" width="100%"> 
 
 ---
