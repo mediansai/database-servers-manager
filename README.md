@@ -34,11 +34,12 @@
 ## Table of contents
 
 1. [Screenshots](#-screenshots)
-2. [Features](#-features)
-3. [Configuration](#-configuration)
-4. [Authentication](#-authentication)
-5. [Backup](#-backup)
-6. [Export](#-export)
+2. [Quick Start](#-quick-start)
+3. [Features](#-features)
+4. [Backup](#-backup)
+5. [Export](#-export)
+6. [Configuration](#-configuration)
+7. [Authentication](#-authentication)
 
 ---
 
