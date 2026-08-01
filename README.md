@@ -97,17 +97,18 @@ http://localhost/database-servers-manager/
 <table>
   <tr>
     <td align="center"><strong>🔐 Login</strong><br><em>Glassmorphism dark theme</em></td>
-    <td align="center"><strong>📊 Table Browser</strong><br><em>Inline editing & pagination</em></td>
+    <td align="center"><strong>📊 Table Export</strong><br><em>Schema & data export</em></td>
   </tr>
   <tr>
     <td align="center"><strong>🎨 Visual Designer</strong><br><em>Drag & drop ERD canvas</em></td>
-    <td align="center"><strong>💾 Backup Manager</strong><br><em>Create, restore, download</em></td>
+    <td align="center"><strong>💾 Backups</strong><br><em>Create, restore, download</em></td>
   </tr>
 </table>
 
 <img src="screenshots/erd.png" width="100%"> 
 <img src="screenshots/export.png" width="100%"> 
 <img src="screenshots/file-manager.png" width="100%"> 
+<img src="screenshots/backup.png" width="100%"> 
 
 ---
 
