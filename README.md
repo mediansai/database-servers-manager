@@ -51,18 +51,6 @@
 
 <table>
   <tr>
-    <td align="center"><strong>🔐 File & Schema Manager</strong><br><em>Manage database as schemas</em>
-    <br />
-    <br />
-    <img src="screenshots/file-manager.png" width="100%"> 
-    </td>
-    <td align="center"><strong>🎨 Data Management </strong><br><em>Display the database tables with data management</em>
-    <br />
-    <br />
-    <img src="screenshots/tables.png" width="100%"> 
-    </td>
-  </tr>
-  <tr>
     <td align="center"><strong>🎨 Visual Designer</strong><br><em>Drag & drop ERD canvas</em>
     <br />
     <br />
@@ -72,6 +60,18 @@
     <br />
     <br />
     <img src="screenshots/create-table.png" width="100%"> 
+    </td>
+  </tr>
+  <tr>
+    <td align="center"><strong>🔐 File & Schema Manager</strong><br><em>Manage database as schemas</em>
+    <br />
+    <br />
+    <img src="screenshots/file-manager.png" width="100%"> 
+    </td>
+    <td align="center"><strong>🎨 Data Management </strong><br><em>Display the database tables with data management</em>
+    <br />
+    <br />
+    <img src="screenshots/tables.png" width="100%"> 
     </td>
   </tr>
   <tr>
